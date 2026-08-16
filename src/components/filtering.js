@@ -2,15 +2,20 @@ import { compare, rules } from "../lib/compare.js";
 
 export function initFiltering(elements, indexes) {
     // @todo: #4.1 — заполнить выпадающие списки опциями
-    Object.keys(indexes)
-        .forEach((elementName) => {
-            if (elements[elementName]) {
-                elements[elementName].append(
-                    ...Object.values(indexes[elementName])
-                        .map(name => new Option(name, name))
-                );
-            }
-        });
+    const fieldMapping = {
+        sellers: 'searchBySeller',     // ← sellers (множественное число)
+        customers: 'searchByCustomer'  // ← customers (множественное число)
+    };
+    
+    Object.keys(indexes).forEach((key) => {
+        const elementKey = fieldMapping[key] || key;
+        
+        if (elements[elementKey] && indexes[key]) {
+            elements[elementKey].append(
+                ...Object.values(indexes[key]).map(name => new Option(name, name))
+            );
+        }
+    });
 
     return (data, state, action) => {
         // @todo: #4.2 — обработать очистку поля

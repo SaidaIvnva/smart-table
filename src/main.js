@@ -34,20 +34,28 @@ function collectState() {
  * @param {HTMLButtonElement?} action
  */
 function render(action) {
-    console.log('🔍 indexes keys:', Object.keys(indexes));
-    console.log('🔍 elements keys:', Object.keys(sampleTable.filter.elements));
-
+    console.log('🔄 render вызван');
+    
     let state = collectState();
-    console.log('🔍 state keys:', Object.keys(state));
-    console.log('🔍 state.seller:', state.seller);
+    console.log('📋 state:', state);
+    
     let result = [...data];
     
-    // @todo: использование
-    result = applySearching(result, state, action);
-    result = applyFiltering(result, state, action);
-    result = applySorting(result, state, action);
-    result = applyPagination(result, state, action);
+    // Применяем все модули
+    if (typeof applySearching === 'function') {
+        result = applySearching(result, state, action);
+    }
+    if (typeof applyFiltering === 'function') {
+        result = applyFiltering(result, state, action);
+    }
+    if (typeof applySorting === 'function') {
+        result = applySorting(result, state, action);
+    }
+    if (typeof applyPagination === 'function') {
+        result = applyPagination(result, state, action);
+    }
     
+    console.log('📊 Результат:', result.length, 'строк');
     sampleTable.render(result);
 }
 
@@ -60,8 +68,8 @@ const sampleTable = initTable({
 
 // @todo: инициализация
 const applyPagination = initPagination(
-    sampleTable.pagination.elements,             // передаём сюда элементы пагинации, найденные в шаблоне
-    (el, page, isCurrent) => {                    // и колбэк, чтобы заполнять кнопки страниц данными
+    sampleTable.pagination.elements,
+    (el, page, isCurrent) => {
         const input = el.querySelector('input');
         const label = el.querySelector('span');
         input.value = page;
@@ -71,15 +79,18 @@ const applyPagination = initPagination(
     }
 );
 
-const applySorting = initSorting([        // Нам нужно передать сюда массив элементов, которые вызывают сортировку, чтобы изменять их визуальное представление
+const applySorting = initSorting([
     sampleTable.header.elements.sortByDate,
     sampleTable.header.elements.sortByTotal
 ]);
 
-const applyFiltering = initFiltering(sampleTable.filter.elements, {
-    searchBySeller: indexes.sellers,    // ✅ ключ 'sellers' во множественном числе
-    searchByCustomer: indexes.customers  // ✅ ключ 'customers' во множественном числе
-});
+const applyFiltering = initFiltering(
+    sampleTable.filter.elements,
+    {
+        searchBySeller: indexes.sellers,
+        searchByCustomer: indexes.customers
+    }
+);
 
 const applySearching = initSearching(sampleTable.search.elements.search);
 
@@ -88,9 +99,3 @@ const appRoot = document.querySelector('#app');
 appRoot.appendChild(sampleTable.container);
 
 render();
-
-
-window.collectState = collectState;
-window.sampleTable = sampleTable;
-window.indexes = indexes;
-window.data = data;

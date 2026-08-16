@@ -22,41 +22,48 @@ export function initFiltering(elements, indexes) {
     return (data, state, action) => {
         // @todo: #4.2 — обработать очистку поля
         if (action && action.name === 'clear') {
-            const parent = action.closest('.filter-wrapper, .dropdown-select');
+            const parent = action.closest('.filter-wrapper, .dropdown-select, .range-inputs');
             
             if (parent) {
-                const input = parent.querySelector('input, select');
-                if (input) {
+                const inputs = parent.querySelectorAll('input, select');
+                inputs.forEach(input => {
                     if (input.tagName === 'SELECT') {
                         input.selectedIndex = 0;
                     } else {
                         input.value = '';
                     }
-                }
+                });
             }
 
             const fieldName = action.dataset.field;
             if (fieldName) {
-                state[fieldName] = '';
-                // Принудительно обновляем state для поля
-                if (fieldName === 'date' || fieldName === 'customer' || fieldName === 'total') {
+                // Если очищаем total, нужно очистить оба поля totalFrom и totalTo
+                if (fieldName === 'total') {
+                    state.totalFrom = '';
+                    state.totalTo = '';
+                    // Очищаем соответствующие поля ввода
+                    if (elements.totalFrom) elements.totalFrom.value = '';
+                    if (elements.totalTo) elements.totalTo.value = '';
+                } else {
                     state[fieldName] = '';
                 }
             }
+            
+            // Возвращаем исходные данные после очистки
+            return [...data];
         }
 
         // @todo: #4.5 — отфильтровать данные используя компаратор
         let filteredData = [...data];
         
-        // Проверяем каждое поле фильтрации
-        const filterKeys = ['date', 'customer', 'seller', 'totalFrom', 'totalTo'];
+        // Сначала применяем фильтрацию по текстовым полям (date, customer, seller)
+        const textFields = ['date', 'customer', 'seller'];
         
-        filterKeys.forEach(key => {
+        textFields.forEach(key => {
             const value = state[key];
+            const elementKey = `searchBy${key.charAt(0).toUpperCase() + key.slice(1)}`;
             
-            // Проверяем наличие значения и соответствующий элемент
-            if (value && value !== '' && elements[`searchBy${key.charAt(0).toUpperCase() + key.slice(1)}`]) {
-                // Для каждого поля применяем свои правила
+            if (value && value !== '' && elements[elementKey]) {
                 let rulesList;
                 
                 if (key === 'date' || key === 'customer') {
@@ -69,23 +76,6 @@ export function initFiltering(elements, indexes) {
                     rulesList = [
                         rules.exactEquality()
                     ];
-                } else if (key === 'totalFrom' || key === 'totalTo') {
-                    // Для диапазона сумм используем числовое сравнение
-                    const numValue = parseFloat(value);
-                    if (!isNaN(numValue)) {
-                        if (key === 'totalFrom') {
-                            filteredData = filteredData.filter(item => {
-                                const total = parseFloat(item.total);
-                                return !isNaN(total) && total >= numValue;
-                            });
-                        } else {
-                            filteredData = filteredData.filter(item => {
-                                const total = parseFloat(item.total);
-                                return !isNaN(total) && total <= numValue;
-                            });
-                        }
-                    }
-                    return; // Пропускаем остальную логику для диапазона
                 }
                 
                 if (rulesList) {
@@ -99,6 +89,25 @@ export function initFiltering(elements, indexes) {
                 }
             }
         });
+        
+        // Применяем фильтрацию по диапазону сумм (totalFrom и totalTo)
+        const totalFrom = state.totalFrom;
+        const totalTo = state.totalTo;
+        
+        // Проверяем, есть ли значения в полях totalFrom и totalTo
+        const hasTotalFrom = totalFrom && totalFrom !== '' && !isNaN(parseFloat(totalFrom));
+        const hasTotalTo = totalTo && totalTo !== '' && !isNaN(parseFloat(totalTo));
+        
+        if (hasTotalFrom || hasTotalTo) {
+            const fromNum = hasTotalFrom ? parseFloat(totalFrom) : -Infinity;
+            const toNum = hasTotalTo ? parseFloat(totalTo) : Infinity;
+            
+            filteredData = filteredData.filter(item => {
+                const total = parseFloat(item.total);
+                if (isNaN(total)) return false;
+                return total >= fromNum && total <= toNum;
+            });
+        }
         
         return filteredData;
     };

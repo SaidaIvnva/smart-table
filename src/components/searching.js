@@ -1,12 +1,10 @@
-import { createComparison, rules, defaultRules } from "../lib/compare.js";
+import { createComparison, rules } from "../lib/compare.js";
 
 export function initSearching(searchField) {
-    // Создаем компаратор с правилами:
-    // 1. skipEmptyTargetValues — игнорируем пустые значения
-    // 2. searchMultipleFields — ищем в нескольких полях
+    // Для поиска используем caseInsensitiveStringIncludes для всех полей
     const compare = createComparison(
-        ['skipEmptyTargetValues'],  // ← правила по умолчанию
-        [rules.searchMultipleFields(searchField, ['date', 'customer', 'seller'], false)]  // ← кастомные правила
+        ['skipEmptyTargetValues'],
+        [rules.searchMultipleFields(searchField, ['date', 'customer', 'seller'], false)]
     );
     
     return (data, state, action) => {
@@ -14,7 +12,7 @@ export function initSearching(searchField) {
         const searchValue = state[searchField];
         
         // Если значение пустое, возвращаем все данные
-        if (!searchValue) {
+        if (!searchValue || searchValue === '') {
             return data;
         }
         

@@ -4,11 +4,10 @@ import {data as sourceData} from "./data/dataset_1.js";
 import {initData} from "./data.js";
 import {processFormData} from "./lib/utils.js";
 import {initTable} from "./components/table.js";
-import {initPagination} from "./components/pagination.js";   // ← добавить
-import {initSorting} from "./components/sorting.js";           // ← добавить
+import {initPagination} from "./components/pagination.js";
+import {initSorting} from "./components/sorting.js";
 import {initFiltering} from "./components/filtering.js";
 import {initSearching} from "./components/searching.js";
-
 
 // Исходные данные используемые в render()
 const {data, ...indexes} = initData(sourceData);
@@ -19,10 +18,10 @@ const {data, ...indexes} = initData(sourceData);
  */
 function collectState() {
     const state = processFormData(new FormData(sampleTable.container));
-    const rowsPerPage = parseInt(state.rowsPerPage);    // приведём количество страниц к числу
-    const page = parseInt(state.page ?? 1);                // номер страницы по умолчанию 1 и тоже число
+    const rowsPerPage = parseInt(state.rowsPerPage) || 10;
+    const page = parseInt(state.page) || 1;
 
-    return {                                            // расширьте существующий return вот так
+    return {
         ...state,
         rowsPerPage,
         page
@@ -41,7 +40,7 @@ function render(action) {
     
     let result = [...data];
     
-    // Применяем все модули
+    // Применяем все модули в правильном порядке: сначала поиск, затем фильтрация, сортировка и пагинация
     if (typeof applySearching === 'function') {
         result = applySearching(result, state, action);
     }
@@ -92,8 +91,7 @@ const applyFiltering = initFiltering(
     }
 );
 
-const applySearching = initSearching(sampleTable.search.elements.search);
-
+const applySearching = initSearching('search');
 
 const appRoot = document.querySelector('#app');
 appRoot.appendChild(sampleTable.container);

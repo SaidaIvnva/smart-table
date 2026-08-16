@@ -24,14 +24,21 @@ export function initTable(settings, onAction) {
     });
 
     // @todo: #1.3 —  обработать события и вызвать onAction()
-    root.container.addEventListener('change', onAction)
+    root.container.addEventListener('change', (e) => {
+        // При изменении полей ввода вызываем onAction без submitter
+        // Чтобы обработать фильтрацию при изменении значений
+        onAction(e.target);
+    });
+    
     root.container.addEventListener('reset', () => {
         setTimeout(() => onAction(), 300);
-    })
+    });
+    
     root.container.addEventListener('submit', (e) => {
         e.preventDefault();
+        // Передаем submitter как action
         onAction(e.submitter);
-    })
+    });
 
     const render = (data) => {
         // @todo: #1.1 — преобразовать данные в массив строк на основе шаблона rowTemplate
@@ -47,7 +54,7 @@ export function initTable(settings, onAction) {
             return row.container;
         });
         root.elements.rows.replaceChildren(...nextRows);
-    }
+    };
 
     return {...root, render};
 }
